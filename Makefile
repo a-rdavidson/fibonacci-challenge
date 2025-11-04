@@ -3,10 +3,10 @@ CXXFLAGS = -Wall -Werror -pedantic -g -O0 -I./include
 
 SRCDIR = ./src
 OBJDIR = obj
-
+TESTSRC = $(SRCDIR)/BigInt_test.cpp
 # Default target
-TARGET = main
-SRC = $(SRCDIR)/fib_bench.cpp
+TARGET = fib_bench
+SRC = $(filter-out $(TESTSRC), $(wildcard $(SRCDIR)/*.cpp))
 
 # If we call "make test", override
 ifeq ($(MAKECMDGOALS),test)
