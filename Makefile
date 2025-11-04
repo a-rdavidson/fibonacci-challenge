@@ -1,34 +1,47 @@
-CC = gcc
-CFLAGS = -Wall -Werror -pedantic -g -O0 -I./include
-TARGET = main
+CXX = g++
+CXXFLAGS = -Wall -Werror -pedantic -g -O0 -I./include
 
-SRCDIR = ./src/
-
-SOURCES := $(wildcard $(SRCDIR)/*.c)
-# Define the build directory for object files
+SRCDIR = ./src
 OBJDIR = obj
 
-# Generate object file names and place them in the OBJDIR
-OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(SOURCES:.c=.o)))
+# Default target
+TARGET = main
+SRC = $(SRCDIR)/fib_bench.cpp
 
+# If we call "make test", override
+ifeq ($(MAKECMDGOALS),test)
+    TARGET = test_suite
+    # Include test file + BigInt implementation
+    SRC = $(SRCDIR)/BigInt_test.cpp $(SRCDIR)/BigInt.cpp
+endif
+
+# Create object files list in OBJDIR
+OBJECTS = $(addprefix $(OBJDIR)/,$(notdir $(SRC:.cpp=.o)))
+
+# Build target
 $(TARGET): $(OBJECTS)
-	@echo "Linking executable..."
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS)
+	@echo "Linking $@..."
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJECTS)
 
-# Rule to create the object directory if it doesn't exist
+# Compile object files
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	@echo "Compiling $<..."
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Ensure object directory exists
 $(OBJDIR):
 	@echo "Creating object directory..."
 	-mkdir -p $(OBJDIR)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) -c $< -o $@
+# Test target
+.PHONY: test
+test: $(TARGET)
+	@echo "Test suite built: $(TARGET)"
 
-
-.PHONY: clean all 
-
-# Clean target
+# Clean
+.PHONY: clean
 clean:
 	@echo "Cleaning project..."
-	rm -f $(TARGET)
+	rm -f main test_suite
 	rm -rf $(OBJDIR)
+
