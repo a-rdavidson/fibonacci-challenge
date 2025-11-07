@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Werror -pedantic -g -O0 -I./include
+CXXFLAGS = -Wall -Werror -pedantic  -O3 -I./include
 
 SRCDIR = ./src
 OBJDIR = obj
@@ -42,6 +42,6 @@ test: $(TARGET)
 .PHONY: clean
 clean:
 	@echo "Cleaning project..."
-	rm -f main test_suite
+	rm -f main test_suite fib_bench
 	rm -rf $(OBJDIR)
 

@@ -14,8 +14,36 @@ int main(void) {
 
   std::cout << "Algorithm: Pure Recursive (O(Phi^N))\n";
   std::cout << "Max N calculated: **" << recursive_result.max_n << "**\n";
-  std::cout << "Fib{" << recursive_result.max_n << "} value: " << recursive_result.fib_value << "\n";
+  std::cout << "Fib{" << recursive_result.max_n << "} value: " << 
+    recursive_result.fib_value << "\n";
   std::cout << "------------------------------------------\n";
+
+
+  BenchmarkResult memo_result = benchmark_fib(fib_memo, TIME_LIMIT);
+
+  std::cout << "Algorithm: Recursive w/ Memoization (O(N^2))\n";
+  std::cout << "Max N calculated: **" << memo_result.max_n << "**\n";
+  std::cout << "Fib{" << memo_result.max_n << "} value: " << 
+    memo_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
+
+
+  BenchmarkResult bottom_up_result = benchmark_fib(fib_bottom_up, TIME_LIMIT);
+
+  std::cout << "Algorithm: Iterative Bottom Up (O(N))\n";
+  std::cout << "Max N calculated: **" << bottom_up_result.max_n << "**\n";
+  std::cout << "Fib{" << bottom_up_result.max_n << "} value: " << 
+    bottom_up_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
+
+  BenchmarkResult better_bottom_up_result = benchmark_fib(fib_bottom_up_better, TIME_LIMIT);
+
+  std::cout << "Algorithm: Iterative Bottom Up (O(N))\n";
+  std::cout << "Max N calculated: **" << better_bottom_up_result.max_n << "**\n";
+  std::cout << "Fib{" << better_bottom_up_result.max_n << "} value: " << 
+    better_bottom_up_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
+
 }
 
 template<typename FibFunc, typename Duration>

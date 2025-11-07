@@ -1,6 +1,4 @@
-#ifndef BIGINT_HPP
-#define BIGINT_HPP
-
+#pragma once
 #include <vector>
 #include <cstdint>
 #include <string>
@@ -48,5 +46,4 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const BigInt& val);
 };
 
-#endif
 
