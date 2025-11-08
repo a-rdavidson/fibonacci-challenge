@@ -44,6 +44,13 @@ int main(void) {
     better_bottom_up_result.fib_value << "\n";
   std::cout << "------------------------------------------\n";
 
+  BenchmarkResult fib_exp_result = benchmark_fib(fib_matrix_exp, TIME_LIMIT);
+
+  std::cout << "Algorithm: Fib Matrix Exponentiation (O(logN))\n";
+  std::cout << "Max N calculated: **" << fib_exp_result.max_n << "**\n";
+  std::cout << "Fib{" << fib_exp_result.max_n << "} value: " << 
+    fib_exp_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
 }
 
 template<typename FibFunc, typename Duration>

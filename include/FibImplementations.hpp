@@ -2,6 +2,7 @@
 #include <BigInt.hpp>
 #include <map>
 #include <vector>
+#include <math_utils.hpp>
 
 /* BEGIN fib_recursive.cpp functions */
 BigInt fib_recursive(size_t n);
@@ -17,3 +18,8 @@ BigInt fib_recursive_memo(size_t n, std::unordered_map<size_t, BigInt>&);
 /* BEGIN fib_iterative.cpp functions */
 BigInt fib_bottom_up(size_t n);
 BigInt fib_bottom_up_better(size_t n);
+/* END */ 
+
+/* BEGIN fib_matrix functions */ 
+
+BigInt fib_matrix_exp(size_t n);
