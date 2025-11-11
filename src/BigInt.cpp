@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 BigInt::BigInt() : digits(1, 0) {}
-BigInt::BigInt(uint64_t value) { digits.push_back(value); }
+BigInt::BigInt(uint64_t value) : digits(1, value) { trim(); }
 BigInt::BigInt(const std::string& str) {
     *this = BigInt(0);
     for (char c : str) {
@@ -12,6 +12,18 @@ BigInt::BigInt(const std::string& str) {
         *this *= BigInt(10);
         *this += BigInt(static_cast<uint64_t>(c - '0'));
     }
+}
+
+BigInt::BigInt(BigInt&& other) noexcept : digits(std::move(other.digits)) {
+    // other is now in a valid but unspecified state, maybe set its vector size to 0 if needed
+}
+
+// Move Assignment Operator
+BigInt& BigInt::operator=(BigInt&& other) noexcept {
+    if (this != &other) {
+        digits = std::move(other.digits);
+    }
+    return *this;
 }
 
 void BigInt::trim() {
@@ -82,9 +94,37 @@ BigInt& BigInt::operator-=(const BigInt& rhs) {
 }
 
 BigInt BigInt::operator*(const BigInt& rhs) const {
-  //if ( this.digits.size() < KARATSUBA_THRESH || rhs.digits.size() < KARATSUBA_THRESH) {
+  if ( this->digits.size() < KARATSUBA_THRESH || rhs.digits.size() < KARATSUBA_THRESH) {
     return this->directMultiplication(rhs);
-  //}
+  }
+  size_t n = std::max(this->digits.size(), rhs.digits.size());
+
+  if ( n % 2 == 1) n++;
+  size_t half_len = n / 2;
+  BigInt x = * this;
+  BigInt y = rhs;
+  x.padToLength(n); 
+  y.padToLength(n);
+
+  std::pair<BigInt, BigInt> xParts = x.split(half_len);
+  std::pair<BigInt, BigInt> yParts = y.split(half_len);
+
+  BigInt x0 = xParts.first; 
+  BigInt x1 = xParts.second;
+  BigInt y0 = yParts.first;
+  BigInt y1 = yParts.second;
+
+  BigInt z2 = x1 * y1;
+  BigInt z0 = x0 * y0;
+  BigInt z1 = (x1 + x0) * (y1 + y0);
+  z1 = z1 - z2 - z0;
+
+  BigInt result = z2.shiftLeftByLimbs(n);
+  result =result + z1.shiftLeftByLimbs(half_len);
+  result = result + z0;
+
+  result.trim();
+  return result;
 }
 
 BigInt& BigInt::operator*=(const BigInt& rhs) {
@@ -110,6 +150,33 @@ bool BigInt::operator<(const BigInt& rhs) const {
 bool BigInt::operator>(const BigInt& rhs) const { return rhs < *this; }
 bool BigInt::operator<=(const BigInt& rhs) const { return !(rhs < *this); }
 bool BigInt::operator>=(const BigInt& rhs) const { return !(*this < rhs); }
+
+BigInt BigInt::shiftLeftByLimbs(size_t num_limbs) const {
+  BigInt result;
+  result.digits.assign(num_limbs, 0);
+  result.digits.insert(result.digits.end(), this->digits.begin(), this->digits.end()); 
+  result.trim();
+  return result;
+}
+
+void BigInt::padToLength(size_t new_length) {
+  if (digits.size() < new_length) {
+    digits.resize(new_length, 0);
+  }
+}
+
+std::pair<BigInt, BigInt> BigInt::split(size_t half_len) const {
+  BigInt low, high;
+
+  if (half_len > 0) {
+    low.digits.assign(digits.begin(), digits.begin() + std::min((size_t) digits.size(), half_len));     low.trim();
+  } 
+  if (digits.size() > half_len) {
+    high.digits.assign(digits.begin() + half_len, digits.end());
+    high.trim();
+  }
+  return {low, high};
+}
 
 std::string BigInt::to_string() const {
     if (*this == BigInt(0)) return "0";

@@ -8,7 +8,7 @@
  * karatsuba multiplication algorithm. Chosen arbitrarily, need
  * to tune for better performance
  */
-#define KARATSUBA_THRESH 4 
+#define KARATSUBA_THRESH 64
 
 class BigInt {
 private:
@@ -25,9 +25,9 @@ public:
 
     // Copy and move semantics
     BigInt(const BigInt& other) = default;
-    BigInt(BigInt&& other) noexcept = default;
+    BigInt(BigInt&& other) noexcept;
     BigInt& operator=(const BigInt& other) = default;
-    BigInt& operator=(BigInt&& other) noexcept = default;
+    BigInt& operator=(BigInt&& other) noexcept;
 
     // Arithmetic operators
     BigInt operator+(const BigInt& rhs) const;
@@ -36,6 +36,11 @@ public:
     BigInt& operator-=(const BigInt& rhs);
     BigInt operator*(const BigInt& rhs) const;
     BigInt& operator*=(const BigInt& rhs);
+    
+    // Karatsbua Helpers
+    BigInt shiftLeftByLimbs(size_t num_limbs) const;
+    void padToLength(size_t new_length);
+    std::pair<BigInt, BigInt> split(size_t half_length) const;
 
     // Comparison operators
     bool operator==(const BigInt& rhs) const;
