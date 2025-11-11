@@ -6,11 +6,26 @@
 int main(void) {
   /* for time limits */
   using namespace std::chrono_literals;
-  const auto TIME_LIMIT = 10s;
+  const auto TIME_LIMIT = 1s;
 
   std::cout << "Starting benchmarks with a " << TIME_LIMIT.count() << "s time limit.\n";
   std::cout << "------------------------------------------\n"; 
 
+  BenchmarkResult fib_bottom_result = benchmark_fib(fib_bottom_up, TIME_LIMIT);
+
+  std::cout << "Algorithm: Fib Bottom Up\n";
+  std::cout << "Max N calculated: **" << fib_bottom_result.max_n << "**\n";
+  std::cout << "Fib{" << fib_bottom_result.max_n << "} value: " << 
+    fib_bottom_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
+
+  BenchmarkResult fib_better_bottom_result = benchmark_fib(fib_bottom_up_better, TIME_LIMIT);
+
+  std::cout << "Algorithm: Fib Better Bottom Up\n";
+  std::cout << "Max N calculated: **" << fib_better_bottom_result.max_n << "**\n";
+  std::cout << "Fib{" << fib_better_bottom_result.max_n << "} value: " << 
+    fib_better_bottom_result.fib_value << "\n";
+  std::cout << "------------------------------------------\n";
 
   BenchmarkResult fib_exp_result = benchmark_fib(fib_matrix_exp, TIME_LIMIT);
 
