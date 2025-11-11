@@ -1,4 +1,5 @@
 #include <math_utils.hpp>
+#include <TimeGuard.hpp>
 
 FibonacciMatrix operator*(const FibonacciMatrix& A, const FibonacciMatrix& B) {
   FibonacciMatrix C;
@@ -30,6 +31,7 @@ FibonacciMatrix matrix_pow(FibonacciMatrix A, size_t n) {
    * of loop
    */
   while (n > 0) {
+    g_benchmark_guard.check_time();
     if (n % 2 == 1) {
       result = result * A;
     }
