@@ -19,6 +19,24 @@ void BigInt::trim() {
         digits.pop_back();
 }
 
+BigInt BigInt::directMultiplication(const BigInt& rhs) const {
+    BigInt result;
+    result.digits.assign(digits.size() + rhs.digits.size(), 0);
+
+    for (size_t i = 0; i < digits.size(); ++i) {
+        unsigned __int128 carry = 0;
+        for (size_t j = 0; j < rhs.digits.size() || carry; ++j) {
+            unsigned __int128 cur = result.digits[i + j] +
+                (unsigned __int128)digits[i] * (j < rhs.digits.size() ? rhs.digits[j] : 0) + carry;
+            result.digits[i + j] = static_cast<uint64_t>(cur);
+            carry = cur >> 64;
+        }
+    }
+
+    result.trim();
+    return result;
+}
+
 BigInt BigInt::operator+(const BigInt& rhs) const {
     BigInt result;
     result.digits.resize(std::max(digits.size(), rhs.digits.size()) + 1, 0);
@@ -64,21 +82,9 @@ BigInt& BigInt::operator-=(const BigInt& rhs) {
 }
 
 BigInt BigInt::operator*(const BigInt& rhs) const {
-    BigInt result;
-    result.digits.assign(digits.size() + rhs.digits.size(), 0);
-
-    for (size_t i = 0; i < digits.size(); ++i) {
-        unsigned __int128 carry = 0;
-        for (size_t j = 0; j < rhs.digits.size() || carry; ++j) {
-            unsigned __int128 cur = result.digits[i + j] +
-                (unsigned __int128)digits[i] * (j < rhs.digits.size() ? rhs.digits[j] : 0) + carry;
-            result.digits[i + j] = static_cast<uint64_t>(cur);
-            carry = cur >> 64;
-        }
-    }
-
-    result.trim();
-    return result;
+  //if ( this.digits.size() < KARATSUBA_THRESH || rhs.digits.size() < KARATSUBA_THRESH) {
+    return this->directMultiplication(rhs);
+  //}
 }
 
 BigInt& BigInt::operator*=(const BigInt& rhs) {

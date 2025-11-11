@@ -4,11 +4,17 @@
 #include <string>
 #include <iostream>
 
+/* length (in 8 byte words) if numbers are greater than to use 
+ * karatsuba multiplication algorithm. Chosen arbitrarily, need
+ * to tune for better performance
+ */
+#define KARATSUBA_THRESH 4 
+
 class BigInt {
 private:
     std::vector<uint64_t> digits;  // Little-endian limbs (least significant first)
     //static const uint64_t BASE = (1ULL << 64);
-
+    BigInt directMultiplication(const BigInt& rhs) const;
     void trim(); // remove leading zeros
 
 public:
