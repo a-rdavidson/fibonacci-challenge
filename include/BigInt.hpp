@@ -8,7 +8,7 @@
  * karatsuba multiplication algorithm. Chosen arbitrarily, need
  * to tune for better performance
  */
-#define KARATSUBA_THRESH 64
+#define KARATSUBA_THRESH 16
 
 class BigInt {
 private:

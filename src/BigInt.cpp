@@ -20,60 +20,83 @@ BigInt::BigInt(BigInt&& other) noexcept : digits(std::move(other.digits)) {
 
 // Move Assignment Operator
 BigInt& BigInt::operator=(BigInt&& other) noexcept {
-    if (this != &other) {
-        digits = std::move(other.digits);
-    }
-    return *this;
+  if (this != &other) {
+      digits = std::move(other.digits);
+  }
+  return *this;
 }
 
 void BigInt::trim() {
-    while (digits.size() > 1 && digits.back() == 0)
-        digits.pop_back();
+  while (digits.size() > 1 && digits.back() == 0)
+      digits.pop_back();
 }
 
 BigInt BigInt::directMultiplication(const BigInt& rhs) const {
-    BigInt result;
-    result.digits.assign(digits.size() + rhs.digits.size(), 0);
+  BigInt result;
+  result.digits.assign(digits.size() + rhs.digits.size(), 0);
 
-    for (size_t i = 0; i < digits.size(); ++i) {
-        unsigned __int128 carry = 0;
-        for (size_t j = 0; j < rhs.digits.size() || carry; ++j) {
-            unsigned __int128 cur = result.digits[i + j] +
-                (unsigned __int128)digits[i] * (j < rhs.digits.size() ? rhs.digits[j] : 0) + carry;
-            result.digits[i + j] = static_cast<uint64_t>(cur);
-            carry = cur >> 64;
-        }
+  for (size_t i = 0; i < digits.size(); ++i) {
+    unsigned __int128 carry = 0;
+    for (size_t j = 0; j < rhs.digits.size(); ++j) {
+      unsigned __int128 curr = result.digits[i + j]  + 
+       (unsigned __int128)digits[i] * rhs.digits[j] + carry;
+
+      result.digits[i + j] = static_cast<uint64_t>(curr);
+      carry = curr >> 64;
     }
+    if ( carry ) {
+      size_t k = i + rhs.digits.size();
+      while (carry) {
+        unsigned __int128 curr = result.digits[k] + carry;
+        result.digits[k] = static_cast<uint64_t>(curr);
+        carry = curr >> 64;
+        k++;
+      }
+    }
+  }
 
-    result.trim();
-    return result;
+  result.trim();
+  return result;
 }
 
 BigInt BigInt::operator+(const BigInt& rhs) const {
-    BigInt result;
-    result.digits.resize(std::max(digits.size(), rhs.digits.size()) + 1, 0);
-    unsigned __int128 carry = 0;
+  BigInt result;
+  result.digits.resize(std::max(digits.size(), rhs.digits.size()) + 1, 0);
+  unsigned __int128 carry = 0;
 
-    for (size_t i = 0; i < result.digits.size(); ++i) {
-        unsigned __int128 a = (i < digits.size()) ? digits[i] : 0;
-        unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
-        unsigned __int128 sum = a + b + carry;
-        result.digits[i] = static_cast<uint64_t>(sum);
-        carry = sum >> 64;
-    }
-    result.trim();
-    return result;
+  for (size_t i = 0; i < result.digits.size(); ++i) {
+    unsigned __int128 a = (i < digits.size()) ? digits[i] : 0;
+    unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
+    unsigned __int128 sum = a + b + carry;
+    result.digits[i] = static_cast<uint64_t>(sum);
+    carry = sum >> 64;
+  }
+  result.trim();
+  return result;
 }
 
 BigInt& BigInt::operator+=(const BigInt& rhs) {
-    *this = *this + rhs;
-    return *this;
+  size_t new_size = std::max(digits.size(), rhs.digits.size()) + 1;
+  if ( digits.size() < new_size) {
+    digits.resize(new_size, 0);
+  }
+  unsigned __int128 carry = 0;
+
+  for (size_t i = 0; i < new_size; ++i) {
+      unsigned __int128 a = (i < digits.size()) ? digits[i] : 0;
+      unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
+      unsigned __int128 sum = a + b + carry;
+      digits[i] = static_cast<uint64_t>(sum);
+      carry = sum >> 64;
+  }
+  trim();
+  return *this;
 }
 
 BigInt BigInt::operator-(const BigInt& rhs) const {
     if (*this < rhs) throw std::underflow_error("Negative BigInt subtraction");
 
-    BigInt result = *this;
+    BigInt result(*this);
     unsigned __int128 borrow = 0;
 
     for (size_t i = 0; i < rhs.digits.size() || borrow; ++i) {
@@ -89,8 +112,18 @@ BigInt BigInt::operator-(const BigInt& rhs) const {
 }
 
 BigInt& BigInt::operator-=(const BigInt& rhs) {
-    *this = *this - rhs;
-    return *this;
+  if (*this < rhs) throw std::underflow_error("Negative BigInt subtraction");
+
+  unsigned __int128 borrow = 0;
+  for (size_t i = 0; i < rhs.digits.size() || borrow; i++) {
+    unsigned __int128 a = digits[i];
+    unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
+    unsigned __int128 diff = a - b - borrow;
+    digits[i] = static_cast<uint64_t>(diff);
+    borrow = (diff >> 64) & 1;
+  }
+  trim();
+  return * this;
 }
 
 BigInt BigInt::operator*(const BigInt& rhs) const {
@@ -99,30 +132,35 @@ BigInt BigInt::operator*(const BigInt& rhs) const {
   }
   size_t n = std::max(this->digits.size(), rhs.digits.size());
 
-  if ( n % 2 == 1) n++;
+  if ( n % 2 == 1) n++; // n always even
   size_t half_len = n / 2;
-  BigInt x = * this;
-  BigInt y = rhs;
-  x.padToLength(n); 
-  y.padToLength(n);
 
-  std::pair<BigInt, BigInt> xParts = x.split(half_len);
-  std::pair<BigInt, BigInt> yParts = y.split(half_len);
+  std::pair<BigInt, BigInt> xParts = this->split(half_len);
+  std::pair<BigInt, BigInt> yParts = rhs.split(half_len);
 
-  BigInt x0 = xParts.first; 
-  BigInt x1 = xParts.second;
-  BigInt y0 = yParts.first;
-  BigInt y1 = yParts.second;
+  BigInt x0 = std::move(xParts.first);
+  BigInt x1 = std::move(xParts.second);
+  BigInt y0 = std::move(yParts.first);
+  BigInt y1 = std::move(yParts.second);
 
   BigInt z2 = x1 * y1;
   BigInt z0 = x0 * y0;
-  BigInt z1 = (x1 + x0) * (y1 + y0);
-  z1 = z1 - z2 - z0;
+  
+  BigInt sum_x = x1 + x0; 
+  BigInt sum_y = y1 + y0; 
+
+  BigInt z1 = sum_x * sum_y;
+  
+  // z1 = z1 - z2 - z0 Moves reduce deep copies
+  z1 = std::move(z1) - z2;
+  z1 = std::move(z1) - z0;
 
   BigInt result = z2.shiftLeftByLimbs(n);
-  result =result + z1.shiftLeftByLimbs(half_len);
-  result = result + z0;
-
+  // result = result + z1 * 2^(n/2)
+  BigInt shifted = z1.shiftLeftByLimbs(half_len);
+  result = std::move(result) + std::move(shifted);
+  // result = result + z0
+  result = std::move(result) + z0;
   result.trim();
   return result;
 }
@@ -153,8 +191,10 @@ bool BigInt::operator>=(const BigInt& rhs) const { return !(*this < rhs); }
 
 BigInt BigInt::shiftLeftByLimbs(size_t num_limbs) const {
   BigInt result;
-  result.digits.assign(num_limbs, 0);
-  result.digits.insert(result.digits.end(), this->digits.begin(), this->digits.end()); 
+  size_t new_size = this->digits.size() + num_limbs;
+
+  result.digits.resize(new_size, 0);
+  std::copy(this->digits.begin(), this->digits.end(), result.digits.begin() + num_limbs);
   result.trim();
   return result;
 }
@@ -167,12 +207,19 @@ void BigInt::padToLength(size_t new_length) {
 
 std::pair<BigInt, BigInt> BigInt::split(size_t half_len) const {
   BigInt low, high;
+  const auto& d = this->digits; 
+  size_t current_size = d.size();
 
   if (half_len > 0) {
-    low.digits.assign(digits.begin(), digits.begin() + std::min((size_t) digits.size(), half_len));     low.trim();
+    size_t low_len = std::min(current_size, half_len);
+    low.digits.reserve(low_len);
+    low.digits.assign(d.begin(), d.begin() + low_len);
+    low.trim();
   } 
   if (digits.size() > half_len) {
-    high.digits.assign(digits.begin() + half_len, digits.end());
+    size_t high_len = current_size - half_len;
+    high.digits.reserve(high_len);
+    high.digits.assign(d.begin() + half_len, d.end());
     high.trim();
   }
   return {low, high};

@@ -5,4 +5,4 @@ PID=$!
 
 echo "running with PID: $PID" 
 
-sudo sample $PID 8
+sudo sample $PID 1
