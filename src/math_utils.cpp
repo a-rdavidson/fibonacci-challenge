@@ -19,6 +19,29 @@ FibonacciMatrix operator*(const FibonacciMatrix& A, const FibonacciMatrix& B) {
   return C;
 }
 
+FibonacciMatrix matrix_square(const FibonacciMatrix& A) {
+  g_benchmark_guard.check_time();
+
+  const BigInt&a = A.data[0][0];
+  const BigInt&b = A.data[0][1]; //assumes b = A.data[1][0]
+  const BigInt&d = A.data[1][1];
+
+  BigInt b_sq = b * b;
+  BigInt a_sq = a * a;
+  BigInt d_sq = d * d;
+
+  BigInt a_d = a + d;
+  BigInt b_times_sum = b * a_d;
+  FibonacciMatrix C;
+
+  C.data[0][0] = a_sq + b_sq;
+  C.data[0][1] = b_times_sum;
+  C.data[1][0] = b_times_sum;
+  C.data[1][1] = b_sq + d_sq;
+  return C;
+
+}  
+
 FibonacciMatrix matrix_pow(FibonacciMatrix A, size_t n) {
   if (n == 0) {
     return FibonacciMatrix::identity();
@@ -35,7 +58,7 @@ FibonacciMatrix matrix_pow(FibonacciMatrix A, size_t n) {
     if (n % 2 == 1) {
       result = result * A;
     }
-    A = A * A;
+    A = matrix_square(A);
     n /= 2; 
   }
   return result; 

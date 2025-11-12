@@ -43,3 +43,4 @@ FibonacciMatrix operator*(const FibonacciMatrix& A, const FibonacciMatrix& B);
 
 /* calculates A^n using fast exponentiation */
 FibonacciMatrix matrix_pow(FibonacciMatrix A, size_t n);
+FibonacciMatrix matrix_square(const FibonacciMatrix& A);
