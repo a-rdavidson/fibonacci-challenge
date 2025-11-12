@@ -152,8 +152,8 @@ BigInt BigInt::operator*(const BigInt& rhs) const {
   BigInt z1 = sum_x * sum_y;
   
   // z1 = z1 - z2 - z0 Moves reduce deep copies
-  z1 = std::move(z1) - z2;
-  z1 = std::move(z1) - z0;
+  z1 -= z2;
+  z1 -= z0;
 
   BigInt result = z2.shiftLeftByLimbs(n);
   // result = result + z1 * 2^(n/2)
