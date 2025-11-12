@@ -33,25 +33,28 @@ void BigInt::trim() {
 
 BigInt BigInt::directMultiplication(const BigInt& rhs) const {
   BigInt result;
-  result.digits.assign(digits.size() + rhs.digits.size(), 0);
+  result.digits.assign(digits.size() + rhs.digits.size() + 1, 0);
 
   for (size_t i = 0; i < digits.size(); ++i) {
     unsigned __int128 carry = 0;
-    for (size_t j = 0; j < rhs.digits.size(); ++j) {
-      unsigned __int128 curr = result.digits[i + j]  + 
-       (unsigned __int128)digits[i] * rhs.digits[j] + carry;
 
-      result.digits[i + j] = static_cast<uint64_t>(curr);
-      carry = curr >> 64;
+    // pre fetching data for compiler 
+    const uint64_t a_limb = digits[i];
+    #pragma unroll
+    for (size_t j = 0; j < rhs.digits.size(); ++j) {
+      unsigned __int128 term = (unsigned __int128)a_limb * rhs.digits[j]; 
+
+      unsigned __int128 sum = term + result.digits[i + j] + carry;
+
+      result.digits[i + j] = static_cast<uint64_t>(sum);
+      carry = sum >> 64;
     }
-    if ( carry ) {
-      size_t k = i + rhs.digits.size();
-      while (carry) {
-        unsigned __int128 curr = result.digits[k] + carry;
-        result.digits[k] = static_cast<uint64_t>(curr);
-        carry = curr >> 64;
-        k++;
-      }
+    size_t k = i + rhs.digits.size();
+    while ( carry != 0 ) {
+      unsigned __int128 sum = (unsigned __int128) result.digits[k] + carry;
+      result.digits[k] = static_cast<uint64_t>(sum);
+      carry = sum >> 64;
+      k++;
     }
   }
 
@@ -76,19 +79,29 @@ BigInt BigInt::operator+(const BigInt& rhs) const {
 }
 
 BigInt& BigInt::operator+=(const BigInt& rhs) {
-  size_t new_size = std::max(digits.size(), rhs.digits.size()) + 1;
+  size_t min_size = std::min(digits.size(), rhs.digits.size());
+  size_t max_size = std::max(digits.size(), rhs.digits.size());
+  size_t new_size = max_size + 1;
+
   if ( digits.size() < new_size) {
     digits.resize(new_size, 0);
   }
-  unsigned __int128 carry = 0;
-
-  for (size_t i = 0; i < new_size; ++i) {
-      unsigned __int128 a = (i < digits.size()) ? digits[i] : 0;
-      unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
-      unsigned __int128 sum = a + b + carry;
-      digits[i] = static_cast<uint64_t>(sum);
-      carry = sum >> 64;
+  
+  unsigned long carry = 0;
+  for (size_t i = 0; i < min_size; i++) {
+    /* 
+     * __builtin_addcl takes in (x, y, carry_in, &carry_out)
+     */
+    digits[i] = __builtin_addcl(digits[i], rhs.digits[i], carry, &carry);
   }
+
+  for (size_t i = min_size; i < new_size; i++) {
+    uint64_t b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
+
+    digits[i] = __builtin_addcl(digits[i], b, carry, &carry);
+    if (carry == 0 && i >= max_size) break;
+  }
+
   trim();
   return *this;
 }
@@ -114,13 +127,13 @@ BigInt BigInt::operator-(const BigInt& rhs) const {
 BigInt& BigInt::operator-=(const BigInt& rhs) {
   if (*this < rhs) throw std::underflow_error("Negative BigInt subtraction");
 
-  unsigned __int128 borrow = 0;
-  for (size_t i = 0; i < rhs.digits.size() || borrow; i++) {
-    unsigned __int128 a = digits[i];
-    unsigned __int128 b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
-    unsigned __int128 diff = a - b - borrow;
-    digits[i] = static_cast<uint64_t>(diff);
-    borrow = (diff >> 64) & 1;
+  unsigned long borrow = 0;
+
+  for (size_t i = 0; i < digits.size(); i++) {
+    uint64_t b = (i < rhs.digits.size()) ? rhs.digits[i] : 0;
+    digits[i] = __builtin_subcl(digits[i], b, borrow, &borrow);
+
+    if (i >= rhs.digits.size() && borrow == 0) break;
   }
   trim();
   return * this;
