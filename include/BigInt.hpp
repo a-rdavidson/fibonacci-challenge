@@ -9,6 +9,9 @@
  * to tune for better performance
  */
 #define KARATSUBA_THRESH 16
+class BigInt;
+
+BigInt generate_random_bigint(size_t num_limbs);
 
 class BigInt {
 private:
@@ -52,6 +55,11 @@ public:
 
     // Utility
     std::string to_string() const;
+    size_t size() const { return digits.size(); }
+    
+  // FRIEND DECLARATION: Gives the benchmark utility function access to private members
+    friend BigInt generate_random_bigint(size_t num_limbs);
+    friend void test_direct_multiplication_stress(int iterations); // gives access to directMultiplication()
 
     // Stream output
     friend std::ostream& operator<<(std::ostream& os, const BigInt& val);

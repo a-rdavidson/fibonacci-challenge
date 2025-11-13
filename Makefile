@@ -1,47 +1,49 @@
 CXX = g++
-CXXFLAGS = -Wall -Werror -pedantic  -O3 -I./include
+CXXFLAGS = -Wall -Werror -pedantic 	-O3 -I./include
 
 SRCDIR = ./src
 OBJDIR = obj
-TESTSRC = $(SRCDIR)/BigInt_test.cpp
-# Default target
-TARGET = fib_bench
-SRC = $(filter-out $(TESTSRC), $(wildcard $(SRCDIR)/*.cpp))
 
-# If we call "make test", override
-ifeq ($(MAKECMDGOALS),test)
-    TARGET = test_suite
-    # Include test file + BigInt implementation
-    SRC = $(SRCDIR)/BigInt_test.cpp $(SRCDIR)/BigInt.cpp
-endif
+ALL_SRCS = $(wildcard $(SRCDIR)/*.cpp)
 
-# Create object files list in OBJDIR
-OBJECTS = $(addprefix $(OBJDIR)/,$(notdir $(SRC:.cpp=.o)))
+MAIN_APP_SRC = $(SRCDIR)/fib_bench.cpp
 
-# Build target
-$(TARGET): $(OBJECTS)
-	@echo "Linking $@..."
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJECTS)
+TEST_RUNNER_SRC = $(SRCDIR)/BigInt_test.cpp
 
-# Compile object files
+IMPL_SRCS = $(filter-out $(MAIN_APP_SRC) $(TEST_RUNNER_SRC), $(ALL_SRCS))
+
+# --- Target: fib_bench (Main Application) ---
+TARGET_APP = fib_bench
+APP_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(MAIN_APP_SRC:.cpp=.o)) $(notdir $(IMPL_SRCS:.cpp=.o)))
+
+$(TARGET_APP): $(APP_OBJECTS)
+	@echo "Linking $@ (Main Application)..."
+	$(CXX) $(CXXFLAGS) -o $@ $(APP_OBJECTS)
+
+# --- Target: test_suite ---
+TARGET_TEST = test_suite
+TEST_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_RUNNER_SRC:.cpp=.o)) $(notdir $(IMPL_SRCS:.cpp=.o)))
+
+.PHONY: test
+test: $(TARGET_TEST)
+
+$(TARGET_TEST): $(TEST_OBJECTS)
+	@echo "Linking $@ (Test Suite)..."
+	$(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJECTS)
+	@echo "Test suite built: $(TARGET_TEST)"
+
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	@echo "Compiling $<..."
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Ensure object directory exists
 $(OBJDIR):
 	@echo "Creating object directory..."
 	-mkdir -p $(OBJDIR)
 
-# Test target
-.PHONY: test
-test: $(TARGET)
-	@echo "Test suite built: $(TARGET)"
-
-# Clean
 .PHONY: clean
 clean:
 	@echo "Cleaning project..."
-	rm -f main test_suite fib_bench
+	rm -f $(TARGET_APP) $(TARGET_TEST)
 	rm -rf $(OBJDIR)
 
